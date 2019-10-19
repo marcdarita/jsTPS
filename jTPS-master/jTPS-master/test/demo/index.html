@@ -1,0 +1,226 @@
+<!doctype html>
+<html>
+
+    <script src = "./mainTPS.js" type = module></script>
+    <script src = "./jsTPS1.js" type = module></script>
+
+    <script>
+
+    class jsTPS1 {
+
+        constructor() {
+        this.transactions = [];
+        this.mostRecentTransaction = -1;
+        this.performingDo = false;
+        this.performingUndo = false; 
+        }
+        isPerformingDo() {
+            return this.performingDo;
+        }
+        isPerformingUndo() {
+            return this.performingUndo;
+        }
+        addTransaction(transaction) {
+            if ((this.mostRecentTransaction < 0) || (this.mostRecentTransaction < (this.transactions.length-1))) {
+                for (var i = this.transactions.length-1; i > this.mostRecentTransaction; i--) {
+                    this.transactions.splice(i, 1);
+                }
+            }
+            this.transactions.push(transaction);
+            this.doTransaction();  
+        }
+        doTransaction() {
+            if (this.hasTransactionToRedo()) {
+                this.performingDo = true;
+                let transaction = this.transactions[this.mostRecentTransaction + 1];
+                transaction.doTransaction();
+                this.mostRecentTransaction++;
+                this.performingDo = false;
+            }
+        }
+        peekUndo() {
+            if (this.hasTransactionToUndo()) {
+                return this.transactions[this.mostRecentTransaction];
+            }
+            else
+                return null;
+        } 
+        peekDo() {
+        if (this.hasTransactionToRedo()) {
+            return this.transactions[this.mostRecentTransaction + 1];
+        }
+        else
+            return null;
+        }
+        undoTransaction() {
+            if (this.hasTransactionToUndo()) {
+                this.performingUndo = true;
+                let transaction = this.transactions[this.mostRecentTransaction];
+                transaction.undoTransaction();
+                this.mostRecentTransaction--;
+                this.performingUndo = false;
+            }
+        }
+        clearAllTransactions() {
+            this.transactions = [];
+            this.mostRecentTransaction = -1;        
+        }
+        getSize() {
+            return this.transactions.length;
+        }
+        getRedoSize() {
+            return this.getSize() - this.mostRecentTransaction - 1;
+        }
+        getUndoSize() {
+            return this.mostRecentTransaction + 1;
+        }
+        hasTransactionToUndo() {
+            return this.mostRecentTransaction >= 0;
+        }
+        hasTransactionToRedo() {
+            return this.mostRecentTransaction < (this.transactions.length-1);
+        }
+        toString() {
+            let text = "--Number of Transactions: " + this.transactions.length + "\n";
+            text += "--Current Index on Stack: " + this.mostRecentTransaction + "\n";
+            text += "--Current Transaction Stack:\n";
+            for (var i = 0; i <= this.mostRecentTransaction; i++) {
+                let jT = this.transactions[i];
+                text += "----" + jT.toString() + "\n";
+            }
+            return text;
+        }
+    }
+
+    class Num {
+
+        constructor() {
+        var num = 0;
+        }
+        
+        setNum = (initNum) => {
+            this.num = initNum;
+        }
+        getNum = ()  => {
+            return this.num;
+        }
+        andMask = (mask) => {
+            num = num & mask;
+        }
+        orMask = (mask) => {
+        this.num = this.num | this.mask;
+        }
+    }
+
+    class AddToNum_Transaction {
+
+        constructor (initNum, initAmountToAdd) {
+            this.num = initNum;
+            this.amountToAdd = initAmountToAdd;
+        }
+        doTransaction = () => {
+            var oldNum = this.num.getNum();
+            var newNum = oldNum + this.amountToAdd;
+            this.num.setNum(newNum);
+        }
+        undoTransaction = () => {
+            var oldNum = this.num.getNum();
+            var newNum = oldNum - this.amountToAdd;
+            this.num.setNum(newNum);
+        }
+        toString = () => {
+            return "Add " + this.amountToAdd;
+        }
+    }
+
+    class AndMask_Transaction {
+
+        constructor() {
+        var num;
+        var intNum;
+        var mask;
+
+        }
+        AndMask_Transaction = (initNum, initIntNum, initMask)  => {
+            // KEEP THESE FOR LATER
+            this.num = initNum;
+            intNum = initIntNum;
+            this.mask = initMask;
+        }
+        doTransaction = () => {
+            num.andMask(mask);
+        }
+        undoTransaction = () => {
+            this.num.setNum(intNum);
+        }
+        toString = () => {
+            return "And Mask " + this.mask;
+        }
+    }
+
+    // -----------------------------------------------------------------------------------------
+    
+    let TPS = new jsTPS1();
+    let num = new Num();
+    num.setNum(parseInt(0));
+    add = () => {
+        var input = document.getElementById("user_input").value;
+
+        if (!(input == "")) {
+            input = parseInt(input)
+            var add = new AddToNum_Transaction(num, input)
+            TPS.addTransaction(add);
+            console.log("ADD - Num current value: " + num.getNum() + ". Current # of transactions: " + TPS.getSize());
+            document.getElementById("demo").innerHTML = "ADD - Num current value: " + num.getNum() + ". Current # of transactions: " + TPS.getSize();
+        }
+        else {
+            console.log("Num current value: " + num.getNum() + ". Current # of transactions: " + TPS.getSize());
+            document.getElementById("demo").innerHTML = "Num current value: " + num.getNum() + ". Current # of transactions: " + TPS.getSize();
+        }
+    }
+
+    undo = () => {
+        TPS.undoTransaction();
+        console.log("UNDO - Num current value: " + num.getNum() + ". Current # of transactions: " + TPS.getSize());
+        document.getElementById("demo").innerHTML = "UNDO - Num current value: " + num.getNum() + ". Current # of transactions: " + TPS.getSize();
+    }
+
+    redo = () => {
+        TPS.doTransaction();
+        console.log("REDO - Num current value: " + num.getNum() + ". Current # of transactions: " + TPS.getSize());
+        document.getElementById("demo").innerHTML = "REDO - Num current value: " + num.getNum() + ". Current # of transactions: " + TPS.getSize();
+    }
+
+    clearStack = () => {
+        TPS.clearAllTransactions();
+        console.log("CLEAR - Transactions cleared. Current # of transactions: " + TPS.getSize());
+        document.getElementById("demo").innerHTML = "CLEAR - Transactions cleared. Current # of transactions: " + TPS.getSize();
+    }
+
+    reset = () => {
+        num.setNum(parseInt(0));
+        console.log("RESET - Num current value: " + num.getNum() + ". Current # of transactions: " + TPS.getSize());
+        document.getElementById("demo").innerHTML = "RESET - Num current value: " + num.getNum() + ". Current # of transactions: " + TPS.getSize();
+    }
+    
+    </script>
+    <header><h1>jsTPS Tester</h1></header>
+
+    <body>
+        <center>
+        <input type="text" id = "user_input" placeholder="Input">
+        <br><br>
+        <button id = "add" onclick="add()">PRESS 1: Add Transaction</button>
+        <button id = "undo" onclick="undo()">PRESS 2: Undo Transaction</button>
+        <button id = "redo" onclick="redo()">PRESS 3: Redo Transaction</button>
+        <button id = "clear" onclick="clearStack()">PRESS 4: Clear Transaction Stack</button>
+        <button id = "reset" onclick="reset()">PRESS 5: Reset Number</button>
+        <br><br>
+        <h2> Result:</h2><br>
+
+        <p id = "demo">
+            </p>
+        </center>
+        
+    </body>
+</html>
